@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/item_music"
+    android:clickable="true"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/tvIndex"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@id/btn_play"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true"
+        android:ems="2"
+        android:scaleX="0.9"
+        android:shadowColor="@android:color/darker_gray"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:text="1233"
+        android:textAlignment="center"
+        android:textSize="14sp"
+        android:typeface="normal" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_toStartOf="@id/btn_play"
+        android:layout_toEndOf="@id/tvIndex"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:text="123"
+        android:textAlignment="viewStart"
+        android:textColor="@color/exo_white"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/tvArtist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvTitle"
+        android:layout_alignStart="@id/tvTitle"
+        android:text="123"
+        android:textAlignment="viewStart"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/tvDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvTitle"
+        android:layout_alignEnd="@id/tvTitle"
+        android:layout_toEndOf="@id/tvArtist"
+        android:text="04:33"
+        android:textAlignment="viewEnd"
+        android:textSize="14sp" />
+
+    <ImageView
+        android:id="@+id/btn_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:src="@drawable/ic_play" />
+</RelativeLayout>
