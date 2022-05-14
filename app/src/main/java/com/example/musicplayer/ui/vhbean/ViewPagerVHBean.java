@@ -1,8 +1,8 @@
-package com.example.musicplayer.ui.music;
+package com.example.musicplayer.ui.vhbean;
 
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.musicplayer.ui.GeneralViewHolderFactory;
+import com.example.musicplayer.ui.holder.GeneralViewHolderFactory;
 import com.example.musicplayer.entity.MusicBean;
 import com.example.mylibrary.recycler.BaseViewHolderBean;
 

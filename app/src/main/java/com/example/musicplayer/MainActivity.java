@@ -1,7 +1,6 @@
 package com.example.musicplayer;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
@@ -21,9 +20,9 @@ import com.example.musicplayer.database.MediaDataUtils;
 import com.example.musicplayer.databinding.ActivityMainBinding;
 import com.example.musicplayer.entity.MusicBean;
 import com.example.musicplayer.jni.NativeObject;
-import com.example.musicplayer.ui.GeneralViewHolderFactory;
+import com.example.musicplayer.ui.holder.GeneralViewHolderFactory;
 import com.example.musicplayer.ui.MusicService;
-import com.example.musicplayer.ui.music.MusicViewHolderBean;
+import com.example.musicplayer.ui.vhbean.MusicViewHolderBean;
 import com.example.mylibrary.recycler.CustomRecyclerViewAdapter;
 import com.example.mylibrary.recycler.OnItemClickListener;
 import com.example.mylibrary.recycler.OnItemLongClickListener;
@@ -96,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initView() {
-        binding.listMedia.setAdapter(new CustomRecyclerViewAdapter(new GeneralViewHolderFactory(this), mMusicList, this, this));
+        binding.listMedia.setAdapter(new CustomRecyclerViewAdapter(new GeneralViewHolderFactory(this, this), mMusicList, this, this));
         DividerItemDecoration divider = new DividerItemDecoration(this, LinearLayoutManager.VERTICAL);
         divider.setDrawable(new ColorDrawable(Color.DKGRAY));
         binding.listMedia.addItemDecoration(divider);

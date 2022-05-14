@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.musicplayer.databinding.FragmentTwoBinding;
+import com.example.musicplayer.ui.one.OneViewModel;
 
 public class TwoFragment extends Fragment {
 
@@ -20,6 +21,8 @@ public class TwoFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
         TwoViewModel notificationsViewModel =
                 new ViewModelProvider(this).get(TwoViewModel.class);
+        OneViewModel oneViewModel =
+                new ViewModelProvider(this).get(OneViewModel.class);
 
         binding = FragmentTwoBinding.inflate(inflater, container, false);
         View root = binding.getRoot();

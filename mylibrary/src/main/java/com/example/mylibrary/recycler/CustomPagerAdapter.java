@@ -10,6 +10,12 @@ import androidx.viewpager.widget.PagerAdapter;
 import java.util.List;
 import java.util.Stack;
 
+/**
+ * adapter for {@link androidx.viewpager.widget.ViewPager}
+ *
+ * @author aluca
+ * @since 2022年5月14日
+ */
 public class CustomPagerAdapter extends PagerAdapter {
 
     private BaseViewHolderFactory factory;

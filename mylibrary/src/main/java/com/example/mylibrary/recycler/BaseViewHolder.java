@@ -5,9 +5,9 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public abstract class BaseViewHolder<T extends BaseViewHolderBean> extends RecyclerView.ViewHolder {
-    protected OnItemClickListener onItemClickListener;
-    protected OnItemLongClickListener onItemLongClickListener;
+public abstract class BaseViewHolder<T> extends RecyclerView.ViewHolder {
+    protected OnItemClickListener _onItemClickListener;
+    protected OnItemLongClickListener _onItemLongClickListener;
     protected T _data;
 
     public BaseViewHolder(@NonNull View itemView) {
@@ -15,18 +15,23 @@ public abstract class BaseViewHolder<T extends BaseViewHolderBean> extends Recyc
     }
 
     void setData(T t) {
+        onBeforeDataChange(t);
         this._data = t;
         onDataChanged(t);
     }
 
-    public abstract void onDataChanged(T t);
+    protected void onBeforeDataChange(T t) {
+
+    }
+
+    protected abstract void onDataChanged(T t);
 
     public void setOnItemLongClickListener(OnItemLongClickListener onItemLongClickListener) {
-        this.onItemLongClickListener = onItemLongClickListener;
+        this._onItemLongClickListener = onItemLongClickListener;
     }
 
     public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        this.onItemClickListener = onItemClickListener;
+        this._onItemClickListener = onItemClickListener;
     }
 
 }

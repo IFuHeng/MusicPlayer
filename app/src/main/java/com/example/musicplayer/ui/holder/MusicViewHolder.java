@@ -1,24 +1,25 @@
-package com.example.musicplayer.ui.music;
+package com.example.musicplayer.ui.holder;
 
 import android.graphics.Color;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LifecycleOwner;
 
 import com.example.musicplayer.R;
 import com.example.musicplayer.databinding.ItemMusicBinding;
+import com.example.musicplayer.ui.vhbean.MusicViewHolderBean;
 import com.example.mylibrary.recycler.BaseViewHolder;
-import com.example.mylibrary.recycler.OnItemClickListener;
 
 public class MusicViewHolder extends BaseViewHolder<MusicViewHolderBean> {
     private MusicViewHolderBean musicViewHolderBean;
     private ItemMusicBinding binding;
 
-    public MusicViewHolder(@NonNull ItemMusicBinding binding) {
+    public MusicViewHolder(@NonNull ItemMusicBinding binding, LifecycleOwner lifecycleOwner) {
         super(binding.root);
         this.binding = binding;
         binding.btnPlay.setOnClickListener(v -> {
-            if (MusicViewHolder.this.onItemClickListener != null) {
-                MusicViewHolder.this.onItemClickListener.onItemClick(v, getAdapterPosition(), musicViewHolderBean);
+            if (MusicViewHolder.this._onItemClickListener != null) {
+                MusicViewHolder.this._onItemClickListener.onItemClick(v, getAdapterPosition(), musicViewHolderBean);
             }
         });
     }
@@ -38,19 +39,14 @@ public class MusicViewHolder extends BaseViewHolder<MusicViewHolderBean> {
 
     private String getDurationStr(int duration) {
         int hour, minutes, seconds;
-        minutes = (int) (duration % 3600);
+        minutes = duration % 3600;
         minutes /= 60;
-        seconds = (int) (duration % 60);
+        seconds = duration % 60;
         if (duration >= 3600) {
-            hour = (int) (duration / 3600);
+            hour = duration / 3600;
             return String.format("%02d:%02d:%02d", hour, minutes, seconds);
         } else {
             return String.format("%02d:%02d", minutes, seconds);
         }
-    }
-
-    @Override
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        this.onItemClickListener = onItemClickListener;
     }
 }
