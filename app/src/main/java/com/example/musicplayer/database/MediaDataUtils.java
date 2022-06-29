@@ -2,7 +2,6 @@ package com.example.musicplayer.database;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.media.MediaDescrambler;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.net.Uri;
@@ -12,10 +11,8 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.example.musicplayer.entity.MusicBean;
-import com.example.musicplayer.service.MusicService;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.MediaMetadata;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
@@ -24,16 +21,14 @@ import com.google.android.exoplayer2.source.MediaSource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class MediaDataUtils {
 
     public static List<MusicBean> getMusic(Context context) {
-        ArrayList<MusicBean> result = new ArrayList<>();
         List<MusicBean> localMusicAll = MyDatabase.getInstance(context).getMusicDao().getAll();
         List<MusicBean> localSysMusicAll = getMusicsFromSysDb(context);
-        result.addAll(localMusicAll);
+        ArrayList<MusicBean> result = new ArrayList<>(localMusicAll);
         for (int i = 0; i < localSysMusicAll.size(); i++) {
             MusicBean musicBean = localSysMusicAll.get(i);
             if (!result.contains(musicBean)) {
@@ -193,7 +188,7 @@ public class MediaDataUtils {
             if (mime.startsWith("audio/")) {
                 if (indexOfTrackAudio == -1) {
                     indexOfTrackAudio = i;
-                } else continue;
+                }
             }
         }
 
@@ -215,8 +210,8 @@ public class MediaDataUtils {
         bundle.putInt(MediaFormat.KEY_SAMPLE_RATE, sampleRate);
     }
 
-    public static MediaItem turnMediaDescription2MediaItem(@Nullable @NonNull MediaDescriptionCompat description) {
-        if (description == null || description.getMediaId() == null) {
+    public static MediaItem turnMediaDescription2MediaItem(@NonNull MediaDescriptionCompat description) {
+        if (description.getMediaId() == null) {
             return null;
         }
         MediaMetadata.Builder mediaMetadataBuilder = new MediaMetadata.Builder();

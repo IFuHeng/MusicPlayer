@@ -1,5 +1,6 @@
 package com.example.musicplayer;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -24,13 +25,12 @@ import java.util.List;
 
 public class PlayActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = PlayActivity.class.getSimpleName();
-    private ActivityPlayerBinding binding;
     private PlayViewModel model;
     private MediaDescriptionAdapter mAdapter;
     private Handler handler;
     private List<MediaDescriptionCompat> arrayMusic;
 
-    private MediaBrowserCompat.ConnectionCallback connectionCallback = new MediaBrowserCompat.ConnectionCallback() {
+    private final MediaBrowserCompat.ConnectionCallback connectionCallback = new MediaBrowserCompat.ConnectionCallback() {
         @Override
         public void onConnected() {
             Log.d(TAG, "====~ onConnected");
@@ -70,11 +70,9 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initView() {
-        binding = ActivityPlayerBinding.inflate(getLayoutInflater());
+        com.example.musicplayer.databinding.ActivityPlayerBinding binding = ActivityPlayerBinding.inflate(getLayoutInflater());
         setContentView(binding.root);
-        mAdapter = new MediaDescriptionAdapter(App.getInstance().sIOExecutor, position -> {
-            model.skipToQueueItem(position);
-        });
+        mAdapter = new MediaDescriptionAdapter(App.getInstance().sIOExecutor, position -> model.skipToQueueItem(position));
         binding.listMedia.setAdapter(mAdapter);
         DividerItemDecoration divider = new DividerItemDecoration(this, LinearLayoutManager.VERTICAL);
         divider.setDrawable(new ColorDrawable(Color.DKGRAY));
@@ -94,6 +92,7 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
         return handler;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -109,11 +108,6 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
                 Toast.makeText(this, "点击播放", Toast.LENGTH_SHORT).show();
                 model.play();
                 break;
-            default:
-                if (v.getTag() != null && v.getTag() instanceof Integer) {
-                    int clickIndex = (int) v.getTag();
-
-                }
         }
     }
 }

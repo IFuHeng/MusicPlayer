@@ -30,7 +30,7 @@ public class PlayViewModel extends ViewModel {
     private MediaControllerCompat controller;
 
     private final MutableLiveData<List<MediaDescriptionCompat>> arrMusic;
-    private MediaControllerCompat.Callback callback = new MediaControllerCompat.Callback() {
+    private final MediaControllerCompat.Callback callback = new MediaControllerCompat.Callback() {
         @Override
         public void onSessionReady() {
             Log.d(TAG, "====~onSessionReady");
@@ -137,10 +137,8 @@ public class PlayViewModel extends ViewModel {
         arrMusic.postValue(list);
         if (controller != null) {
             if (list != null && !list.isEmpty()) {
-                String mediaId = list.get(0).getMediaId();
                 Bundle bundle = new Bundle();
                 bundle.putParcelableArrayList(Constants.KEY_QUEUE, new ArrayList<>(list));
-//                controller.getTransportControls().prepareFromMediaId(mediaId, bundle);
                 controller.getTransportControls().sendCustomAction(Constants.CMD_SET_QUEUE, bundle);
             } else {
                 controller.getTransportControls().sendCustomAction(Constants.CMD_SET_QUEUE, null);
