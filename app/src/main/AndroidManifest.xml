@@ -14,27 +14,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MusicPlayer.noTitle.fullscreen">
         <activity
-            android:name=".ui.TestNavigationActivity"
-            android:exported="true"
-            android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:label="@string/title_activity_test_navigation"
-            android:screenOrientation="landscape">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <service
-            android:name=".ui.MusicService"
-            android:enabled="true"
-            android:exported="false" />
-        <service
-            android:name=".ui.MyIntentService"
-            android:exported="false" />
-
-        <activity
             android:name=".SplashActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Holo.NoActionBar.Fullscreen">
@@ -45,6 +24,32 @@
             </intent-filter>
         </activity>
         <activity android:name=".MainActivity" />
+        <activity
+            android:name=".ui.TestNavigationActivity"
+            android:exported="true"
+            android:label="@string/title_activity_test_navigation"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".PlayActivity" />
+
+        <service
+            android:name=".service.MusicService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".ui.MyIntentService"
+            android:exported="false" />
+
     </application>
 
 </manifest>

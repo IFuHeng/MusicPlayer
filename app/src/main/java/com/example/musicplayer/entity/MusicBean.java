@@ -1,22 +1,42 @@
 package com.example.musicplayer.entity;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
 import java.util.Objects;
 
+@Entity
 public class MusicBean {
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo
     private long id;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     private String title;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     private String artist;
+    @ColumnInfo(typeAffinity = ColumnInfo.INTEGER)
     private long duration;
+    @ColumnInfo(typeAffinity = ColumnInfo.INTEGER)
     private long size;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     private String url;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     String displayName;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     String album;
+    @ColumnInfo(typeAffinity = ColumnInfo.TEXT)
     String mimeType;
 
+    @Ignore
     /**
      * Cache the hash code for the MusicBean
      */
     private int hash;
+
+    @Ignore
+    private boolean isInLocalStorage;
 
     public MusicBean(long id, String title, String artist,
                      long duration, long size, String url,
@@ -36,72 +56,36 @@ public class MusicBean {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getArtist() {
         return artist;
     }
 
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
     public long getDuration() {
         return duration;
-    }
-
-    public void setDuration(long duration) {
-        this.duration = duration;
     }
 
     public long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
-        this.size = size;
-    }
-
     public String getUrl() {
         return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
     }
 
     public String getDisplayName() {
         return displayName;
     }
 
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
     public String getAlbum() {
         return album;
     }
 
-    public void setAlbum(String album) {
-        this.album = album;
-    }
-
     public String getMimeType() {
         return mimeType;
-    }
-
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
     }
 
     @Override
@@ -109,12 +93,23 @@ public class MusicBean {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MusicBean musicBean = (MusicBean) o;
-        return id == musicBean.id && duration == musicBean.duration && size == musicBean.size && hash == musicBean.hash && Objects.equals(title, musicBean.title) && Objects.equals(artist, musicBean.artist) && Objects.equals(url, musicBean.url) && Objects.equals(displayName, musicBean.displayName) && Objects.equals(album, musicBean.album) && Objects.equals(mimeType, musicBean.mimeType);
+        return id == musicBean.id && duration == musicBean.duration && size == musicBean.size && Objects.equals(title, musicBean.title) && Objects.equals(artist, musicBean.artist) && Objects.equals(url, musicBean.url) && Objects.equals(displayName, musicBean.displayName) && Objects.equals(album, musicBean.album) && Objects.equals(mimeType, musicBean.mimeType);
+    }
+
+    public boolean isInLocalStorage() {
+        return isInLocalStorage;
+    }
+
+    public void setInLocalStorage(boolean inLocalStorage) {
+        isInLocalStorage = inLocalStorage;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, artist, duration, size, url, displayName, album, mimeType, hash);
+        if (hash == 0) {
+            hash = Objects.hash(id, title, artist, duration, size, url, displayName, album, mimeType);
+        }
+        return hash;
     }
 
     @Override

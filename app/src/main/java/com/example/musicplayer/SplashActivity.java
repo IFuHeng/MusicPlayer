@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,17 +39,15 @@ public class SplashActivity extends FragmentActivity {
         });
         setContentView(binding.getRoot());
         if (verifyStoragePermission()) {
-            new CountDownTimer(2000, 100) {
+            new CountDownTimer(1000, 100) {
 
                 @Override
                 public void onTick(long millisUntilFinished) {
-                    Log.d(getClass().getSimpleName(), "====~currentThread is " + Thread.currentThread() + " , millisUntilFinished = " + millisUntilFinished);
                     mViewModel.getRemaining().postValue((int) millisUntilFinished);
                 }
 
                 @Override
                 public void onFinish() {
-                    Log.d(getClass().getSimpleName(), "====~currentThread is " + Thread.currentThread() + " , onFinish ");
                     mViewModel.getRemaining().postValue(0);
                 }
             }.start();
@@ -101,7 +98,7 @@ public class SplashActivity extends FragmentActivity {
     //前往下一页
     private void goNext() {
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-        startActivity(new Intent(this, MainActivity.class));
+        startActivity(new Intent(this, PlayActivity.class));
         finish();
     }
 }

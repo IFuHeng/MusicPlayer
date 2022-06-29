@@ -9,10 +9,8 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.viewpager2.widget.CompositePageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.musicplayer.databinding.FragmentOneBinding;
@@ -34,7 +32,7 @@ public class OneFragment extends Fragment implements OnItemClickListener, OnItem
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
         notificationsViewModel =
-                new ViewModelProvider(this).get(OneViewModel.class);
+                new ViewModelProvider(getActivity()).get(OneViewModel.class);
 
         binding = FragmentOneBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
@@ -44,14 +42,11 @@ public class OneFragment extends Fragment implements OnItemClickListener, OnItem
 
         adapter = new CustomPagerListAdapter<>(new GeneralViewHolderFactory(getContext(), getViewLifecycleOwner()), this, this);
         binding.viewpaget2.setAdapter(adapter);
-        binding.viewpaget2.setPageTransformer(new ViewPager2.PageTransformer() {
-            @Override
-            public void transformPage(@NonNull View page, float position) {
-                page.setAlpha(1f - position);
-            }
-        });
+        binding.viewpaget2.setPageTransformer((page, position) -> page.setAlpha(1f - position));
         binding.textOne.setOnClickListener(v -> {
+            adapter = new CustomPagerListAdapter<>(new GeneralViewHolderFactory(getContext(), getViewLifecycleOwner()), this, this);
             adapter.submitList(createColorVHBean(notificationsViewModel.getColors().getValue()));
+            binding.viewpaget2.setAdapter(adapter);
         });
 
         notificationsViewModel.getColors().observe(getViewLifecycleOwner(), it -> {

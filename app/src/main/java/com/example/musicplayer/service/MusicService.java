@@ -1,4 +1,4 @@
-package com.example.musicplayer.ui;
+package com.example.musicplayer.service;
 
 import android.app.Service;
 import android.content.Intent;
@@ -7,11 +7,18 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
+import com.google.android.exoplayer2.source.MediaSource;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class MusicService extends Service {
@@ -65,7 +72,7 @@ public class MusicService extends Service {
         private ExoPlayer player;
         private ReentrantLock mLock = new ReentrantLock();
 
-        public void play(String path) {
+        public void play(@NonNull @NotNull String path) {
             if (path == null || path.isEmpty()) {
                 Toast.makeText(getApplicationContext(), "empty media path", Toast.LENGTH_SHORT).show();
                 return;
@@ -75,13 +82,28 @@ public class MusicService extends Service {
                     player = new SimpleExoPlayer.Builder(MusicService.this).build();
                 }
                 if (player.getCurrentMediaItem() == null || !player.getCurrentMediaItem().mediaId.equals(path)) {
-                    player.setMediaSource(
-                            new DefaultMediaSourceFactory(
-                                    MusicService.this).createMediaSource(
-                                    MediaItem.fromUri(path)
-                            )
-                    );
+                    player.setMediaItem(MediaItem.fromUri(path));
                 }
+                player.prepare();
+                player.play();
+            }
+        }
+
+        public void play(@NonNull @NotNull List<String> paths, int index) {
+            if (paths.isEmpty()) {
+                Toast.makeText(getApplicationContext(), "empty media path", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            synchronized (mLock) {
+                if (player == null) {
+                    player = new SimpleExoPlayer.Builder(MusicService.this).build();
+                }
+                List<MediaSource> playlist = new ArrayList<>();
+                DefaultMediaSourceFactory factory = new DefaultMediaSourceFactory(MusicService.this);
+                for (String path : paths) {
+                    playlist.add(factory.createMediaSource(MediaItem.fromUri(path)));
+                }
+                player.setMediaSources(playlist, index, 0);
                 player.prepare();
                 player.play();
             }

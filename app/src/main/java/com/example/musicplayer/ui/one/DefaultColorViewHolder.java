@@ -17,23 +17,19 @@ import com.example.mylibrary.recycler.BaseViewHolder;
 
 import java.lang.ref.WeakReference;
 
-public class DefaultColorViewHolder extends BaseViewHolder<DefaultColorVHBean> implements LifecycleOwner ,Observer<Integer> {
+public class DefaultColorViewHolder extends BaseViewHolder<DefaultColorVHBean> implements Observer<Integer> {
 
-    private LifecycleRegistry lifecycleRegistry;
-    private DefaultObserver observer;
+    private LifecycleOwner lifecycleOwner;
 
-    public DefaultColorViewHolder(@NonNull View itemView) {
+    public DefaultColorViewHolder(@NonNull View itemView, LifecycleOwner owner) {
         super(itemView);
-        observer = new DefaultObserver(this);
         itemView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         itemView.setOnClickListener(v -> _onItemClickListener.onItemClick(itemView, getAdapterPosition(), _data));
         itemView.setOnLongClickListener(v -> {
             _onItemLongClickListener.onItemLongClick(itemView, getAdapterPosition(), _data);
             return false;
         });
-
-        lifecycleRegistry = new LifecycleRegistry(this::getLifecycle);
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+        this.lifecycleOwner = owner;
     }
 
     @Override
@@ -44,10 +40,7 @@ public class DefaultColorViewHolder extends BaseViewHolder<DefaultColorVHBean> i
     @SuppressLint("DefaultLocale")
     @Override
     public void onDataChanged(DefaultColorVHBean bean) {
-        if (observer.weakReference.get() == null) {
-            observer = new DefaultObserver(this);
-        }
-        bean.color.observe(this, this::onChanged);
+        bean.color.observe(lifecycleOwner, this::onChanged);
         refresh(bean.color.getValue());
     }
 
@@ -60,14 +53,10 @@ public class DefaultColorViewHolder extends BaseViewHolder<DefaultColorVHBean> i
         }
     }
 
-    @NonNull
-    @Override
-    public Lifecycle getLifecycle() {
-        return lifecycleRegistry;
-    }
     public void onChanged(Integer d) {
         refresh(d);
     }
+
     public static class DefaultObserver implements Observer<Integer> {
 
         private WeakReference<DefaultColorViewHolder> weakReference;

@@ -27,14 +27,14 @@ public class MusicViewHolder extends BaseViewHolder<MusicViewHolderBean> {
     @Override
     public void onDataChanged(MusicViewHolderBean musicViewHolderBean) {
         this.musicViewHolderBean = musicViewHolderBean;
-        this.binding.tvTitle.setText(musicViewHolderBean.getMusicBean().getTitle());
+        this.binding.tvTitle.setText(musicViewHolderBean.getData().getTitle());
         this.binding.btnPlay.setImageResource(musicViewHolderBean.isPlaying()
                 ? R.drawable.ic_pause
                 : R.drawable.ic_play);
         this.binding.tvIndex.setText(String.valueOf(getAdapterPosition()));
         this.binding.tvIndex.setTextColor(Color.HSVToColor(new float[]{getAdapterPosition() + 180, 1, 1}));
-        this.binding.tvArtist.setText(musicViewHolderBean.getMusicBean().getArtist());
-        this.binding.tvDuration.setText(getDurationStr((int) (musicViewHolderBean.getMusicBean().getDuration() / 1000)));
+        this.binding.tvArtist.setText(musicViewHolderBean.getData().getArtist());
+        this.binding.tvDuration.setText(getDurationStr((int) (musicViewHolderBean.getData().getDuration() / 1000)));
     }
 
     private String getDurationStr(int duration) {

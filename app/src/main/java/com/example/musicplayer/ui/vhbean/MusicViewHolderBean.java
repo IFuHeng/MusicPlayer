@@ -4,19 +4,13 @@ import com.example.musicplayer.entity.MusicBean;
 import com.example.musicplayer.ui.holder.GeneralViewHolderFactory;
 import com.example.mylibrary.recycler.BaseViewHolderBean;
 
-public class MusicViewHolderBean extends BaseViewHolderBean {
-
-    private MusicBean musicBean;
+@Deprecated
+public class MusicViewHolderBean extends BaseViewHolderBean<MusicBean> {
 
     private boolean isPlaying;
 
     public MusicViewHolderBean(MusicBean musicBean) {
-        super(GeneralViewHolderFactory.TYPE_MUSIC_ITEM);
-        this.musicBean = musicBean;
-    }
-
-    public MusicBean getMusicBean() {
-        return musicBean;
+        super(GeneralViewHolderFactory.TYPE_MUSIC_ITEM,musicBean);
     }
 
     public boolean isPlaying() {

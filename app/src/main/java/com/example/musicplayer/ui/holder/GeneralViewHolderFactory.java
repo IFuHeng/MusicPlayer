@@ -52,7 +52,7 @@ public class GeneralViewHolderFactory extends BaseViewHolderFactory {
                 return holder;
             }
             case TYPE_SIMPLE_COLOR: {
-                BaseViewHolder holder = new DefaultColorViewHolder(new TextView(inflater.getContext()));
+                BaseViewHolder holder = new DefaultColorViewHolder(new TextView(inflater.getContext()), owner);
                 return holder;
             }
             case TYPE_NEXT_LEVEL_LIST: {

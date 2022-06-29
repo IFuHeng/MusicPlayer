@@ -6,7 +6,9 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
-@Database(entities = {FilterBean.class}, version = 1, exportSchema = false)
+import com.example.musicplayer.entity.MusicBean;
+
+@Database(entities = {FilterBean.class, MusicBean.class}, version = 1, exportSchema = false)
 public abstract class MyDatabase extends RoomDatabase {
 
     private static MyDatabase sInstance;
@@ -21,4 +23,6 @@ public abstract class MyDatabase extends RoomDatabase {
     }
 
     public abstract FilterDao getFilterDao();
+
+    public abstract MusicDao getMusicDao();
 }
