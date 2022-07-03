@@ -1,0 +1,8 @@
+package com.example.mylibrary.service;
+
+public enum MediaItemTransitionReason {
+    MEDIA_ITEM_TRANSITION_REASON_REPEAT,
+    MEDIA_ITEM_TRANSITION_REASON_AUTO,
+    MEDIA_ITEM_TRANSITION_REASON_SEEK,
+    MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
+}

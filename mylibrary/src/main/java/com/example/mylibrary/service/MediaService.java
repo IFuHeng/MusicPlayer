@@ -1,9 +1,13 @@
 package com.example.mylibrary.service;
 
 
+import android.content.Context;
 import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.os.ResultReceiver;
 import android.support.v4.media.MediaBrowserCompat;
 import android.support.v4.media.MediaDescriptionCompat;
@@ -31,92 +35,23 @@ import com.google.android.exoplayer2.text.Cue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MediaService extends MediaBrowserServiceCompat {
     private static final String TAG = MediaService.class.getSimpleName();
+    private static final int WHAT_REFRESH_POSITION = 0;
     private static final String TAG_PLAYER_LISTENER = "Player.Listener";
     private static final String TAG_SESSION_LISTENER = "MediaSession.Callback";
-    private MediaSessionCompat session;
-    private ExoPlayer player;
+    private static final long INTERVAL_REFRESH = 1000L;
+    private static PlayerSessionImpl playerSession;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        session = new MediaSessionCompat(this, "MyMusicService");
-        setSessionToken(session.getSessionToken());
-        session.setCallback(callback);
-        session.setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |
-                        MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-        );
-        player = new SimpleExoPlayer.Builder(this).build();
-        player.setPlayWhenReady(true);
-        player.addListener(new Player.Listener() {
-            @Override
-            public void onCues(List<Cue> cues) {
-                Player.Listener.super.onCues(cues);
-                Log.d(TAG_PLAYER_LISTENER, "====~onCues : " + cues);
-            }
-
-            @Override
-            public void onMetadata(Metadata metadata) {
-                Player.Listener.super.onMetadata(metadata);
-                Log.d(TAG_PLAYER_LISTENER, "====~onMetadata : " + metadata);
-            }
-
-            @Override
-            public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
-                Player.Listener.super.onMediaItemTransition(mediaItem, reason);
-                Log.d(TAG_PLAYER_LISTENER, "====~onMediaItemTransition : mediaItem = " + mediaItem + " ,  reason = " + reason);
-            }
-
-            @Override
-            public void onTimelineChanged(Timeline timeline, int reason) {
-                Player.Listener.super.onTimelineChanged(timeline, reason);
-                Log.d(TAG_PLAYER_LISTENER, "====~onTimelineChanged : timeline = " + timeline + " ,  reason = " + reason);
-            }
-
-            @Override
-            public void onMediaMetadataChanged(MediaMetadata mediaMetadata) {
-                Player.Listener.super.onMediaMetadataChanged(mediaMetadata);
-                Log.d(TAG_PLAYER_LISTENER, "====~onMediaMetadataChanged : mediaMetadata = " + mediaMetadata);
-            }
-
-            @Override
-            public void onPositionDiscontinuity(Player.PositionInfo oldPosition, Player.PositionInfo newPosition, int reason) {
-                Player.Listener.super.onPositionDiscontinuity(oldPosition, newPosition, reason);
-                Log.d(TAG_PLAYER_LISTENER, "====~onPositionDiscontinuity : oldPosition = " + oldPosition + " ,  newPosition = " + newPosition + " ,  reason = " + reason);
-            }
-
-            @Override
-            public void onEvents(Player player, Player.Events events) {
-                Player.Listener.super.onEvents(player, events);
-                List<Integer> event = new ArrayList<>();
-                for (int i = 0; i < events.size(); i++) {
-                    event.add(events.get(i));
-                }
-                Log.d(TAG_PLAYER_LISTENER, "====~onEvents : player = " + player + " ,  events = " + event);
-            }
-
-            @Override
-            public void onPlaybackStateChanged(int state) {
-                Player.Listener.super.onPlaybackStateChanged(state);
-                Log.d(TAG_PLAYER_LISTENER, "====~onPlaybackStateChanged : state = " + state);
-            }
-
-            @Override
-            public void onPlayerError(ExoPlaybackException error) {
-                Player.Listener.super.onPlayerError(error);
-                Log.d(TAG_PLAYER_LISTENER, "====~onPlayerError : error = " + error);
-            }
-
-            @Override
-            public void onStaticMetadataChanged(List<Metadata> metadataList) {
-                Player.Listener.super.onStaticMetadataChanged(metadataList);
-                Log.d(TAG_PLAYER_LISTENER, "====~onStaticMetadataChanged : metadataList = " + metadataList);
-            }
-
-        });
+        if (playerSession == null) {
+            playerSession = new PlayerSessionImpl(this);
+        }
+        setSessionToken(playerSession.getSession().getSessionToken());
     }
 
     @Nullable
@@ -130,7 +65,178 @@ public class MediaService extends MediaBrowserServiceCompat {
         result.sendResult(new ArrayList());
     }
 
-    private MediaSessionCompat.Callback callback = new MediaSessionCompat.Callback() {
+    @Override
+    public void onCustomAction(@NonNull String action, Bundle extras, @NonNull Result<Bundle> result) {
+        Log.d(TAG, "====~onCustomAction: action =  " + action + ", extras =  " + extras + ", result =  " + result);
+        super.onCustomAction(action, extras, result);
+    }
+
+    private static class PlayerSessionImpl extends MediaSessionCompat.Callback {
+        private MediaSessionCompat session;
+        private ExoPlayer player;
+
+        /**
+         * 播放列表数据
+         */
+        private final List<MediaMetadataCompat> mediaMetadataList = new ArrayList<>();
+        private final DefaultMediaSourceFactory factory;
+
+        public PlayerSessionImpl(Context context) {
+            factory = new DefaultMediaSourceFactory(context);
+            initSession(context);
+            initPlayer(context);
+        }
+
+        private Handler handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                switch (msg.what) {
+                    case WHAT_REFRESH_POSITION:
+                        PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder();
+                        builder.setState(PlaybackStateCompat.STATE_PLAYING, player.getContentPosition(), 1);
+                        session.setPlaybackState(builder.build());
+                        if (player.isPlaying()) {
+                            sendEmptyMessageDelayed(WHAT_REFRESH_POSITION, INTERVAL_REFRESH);
+                        }
+                        break;
+                }
+            }
+        };
+
+
+        private void initSession(Context context) {
+            if (session == null) {
+                session = new MediaSessionCompat(context, "MyMusicService");
+                session.setCallback(this);
+                session.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+            }
+        }
+
+        MediaSessionCompat getSession() {
+            return session;
+        }
+
+        private void initPlayer(Context context) {
+            if (player != null) {
+                return;
+            }
+            player = new SimpleExoPlayer.Builder(context).build();
+            player.setPlayWhenReady(true);
+            player.addListener(new Player.Listener() {
+                @Override
+                public void onCues(List<Cue> cues) {
+                    Player.Listener.super.onCues(cues);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onCues : " + cues);
+                }
+
+                @Override
+                public void onMetadata(Metadata metadata) {
+                    Player.Listener.super.onMetadata(metadata);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onMetadata : " + metadata);
+                }
+
+                @Override
+                public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+                    Player.Listener.super.onMediaItemTransition(mediaItem, reason);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onMediaItemTransition : mediaItem = " + mediaItem.mediaId + " ,  reason = " + MediaItemTransitionReason.values()[reason].name());
+                    for (MediaMetadataCompat metadataCompat : mediaMetadataList) {
+                        if (metadataCompat.getDescription().getMediaId().equals(mediaItem.mediaId)) {
+                            session.setMetadata(metadataCompat);
+                        }
+                    }
+                }
+
+                @Override
+                public void onTimelineChanged(@NonNull Timeline timeline, int reason) {
+                    Player.Listener.super.onTimelineChanged(timeline, reason);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onTimelineChanged : timeline = " + timeline + " ,  reason = " + TimelineChangeReason.values()[reason].name());
+                }
+
+                @Override
+                public void onMediaMetadataChanged(@NonNull MediaMetadata mediaMetadata) {
+                    Player.Listener.super.onMediaMetadataChanged(mediaMetadata);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onMediaMetadataChanged : mediaMetadata = " + mediaMetadata.title);
+                    session.setMetadata(mediaMetadataList.get(player.getCurrentWindowIndex()));
+                }
+
+                @Override
+                public void onPositionDiscontinuity(Player.PositionInfo oldPosition, Player.PositionInfo newPosition, int reason) {
+                    Player.Listener.super.onPositionDiscontinuity(oldPosition, newPosition, reason);
+                    String strOld = String.format(Locale.getDefault(), "[positionMs=%d,contentPositionMs=%d, periodIndex=%d, windowIndex=%d, adGroupIndex=%d, adIndexInAdGroup=%d]"
+                            , oldPosition.positionMs, oldPosition.contentPositionMs
+                            , oldPosition.periodIndex, oldPosition.windowIndex
+                            , oldPosition.adGroupIndex, oldPosition.adIndexInAdGroup);
+                    String strNew = String.format(Locale.getDefault(), "[positionMs=%d,contentPositionMs=%d, periodIndex=%d, windowIndex=%d, adGroupIndex=%d, adIndexInAdGroup=%d]"
+                            , newPosition.positionMs, newPosition.contentPositionMs
+                            , newPosition.periodIndex, newPosition.windowIndex
+                            , newPosition.adGroupIndex, newPosition.adIndexInAdGroup);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onPositionDiscontinuity : oldPosition = " + strOld + " ,  newPosition = " + strNew + " ,  reason = " + PlayerReason.values()[reason].name());
+                }
+
+                @Override
+                public void onEvents(@NonNull Player player, @NonNull Player.Events events) {
+                    Player.Listener.super.onEvents(player, events);
+                    List<String> event = new ArrayList<>();
+                    for (int i = 0; i < events.size(); i++) {
+                        event.add(PlayerEvent.values()[events.get(i)].name());
+                    }
+                    Log.d(TAG_PLAYER_LISTENER, "====~onEvents : player = " + player + " ,  events = " + event);
+
+                    PlaybackStateCompat.Builder builder = new PlaybackStateCompat.Builder();
+                    int state = 0;
+                    if (events.contains(Player.EVENT_IS_PLAYING_CHANGED)) {
+                        if (player.isPlaying()) {
+                            state = PlaybackStateCompat.STATE_PLAYING;
+                            builder.setActions(PlaybackStateCompat.ACTION_PLAY);
+                            handler.sendEmptyMessage(WHAT_REFRESH_POSITION);
+                        } else {
+                            state = PlaybackStateCompat.STATE_PAUSED;
+                            builder.setActions(PlaybackStateCompat.ACTION_PAUSE);
+                            handler.removeMessages(WHAT_REFRESH_POSITION);
+                        }
+                    } else if (events.contains(Player.EVENT_IS_LOADING_CHANGED)) {
+                        state = PlaybackStateCompat.STATE_BUFFERING;
+                    } else if (events.contains(Player.EVENT_PLAYER_ERROR)) {
+                        Bundle bundle = new Bundle();
+                        player.getCurrentWindowIndex();
+                        if (player.getCurrentMediaItem() != null) {
+                            MediaItem mediaItem = player.getCurrentMediaItem();
+                            bundle.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, mediaItem.mediaId);
+                            String title = mediaItem.mediaMetadata.title != null ? mediaItem.mediaMetadata.title.toString() : "";
+                            bundle.putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, title);
+                        }
+                        session.sendSessionEvent(Constants.EVENT_ERROR, bundle);
+                        session.getController().getTransportControls().skipToNext();
+                        state = PlaybackStateCompat.STATE_SKIPPING_TO_NEXT;
+                        builder.setActions(PlaybackStateCompat.ACTION_STOP);
+                    }
+                    builder.setState(state, player.getContentPosition(), 1);
+                    builder.setBufferedPosition(player.getBufferedPosition());
+
+                    session.setPlaybackState(builder.build());
+                }
+
+                @Override
+                public void onPlaybackStateChanged(int state) {
+                    Player.Listener.super.onPlaybackStateChanged(state);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onPlaybackStateChanged : state = " + PlaybackReason.values()[state].name());
+                }
+
+                @Override
+                public void onPlayerError(ExoPlaybackException error) {
+                    Player.Listener.super.onPlayerError(error);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onPlayerError : error = " + error);
+                }
+
+                @Override
+                public void onStaticMetadataChanged(List<Metadata> metadataList) {
+                    Player.Listener.super.onStaticMetadataChanged(metadataList);
+                    Log.d(TAG_PLAYER_LISTENER, "====~onStaticMetadataChanged : metadataList = " + metadataList);
+                }
+
+            });
+        }
+
         @Override
         public void onPlay() {
             player.play();
@@ -198,21 +304,26 @@ public class MediaService extends MediaBrowserServiceCompat {
             Log.d(TAG_SESSION_LISTENER, "====~onCustomAction: action = " + action + ", extras = " + extras);
             switch (action) {
                 case Constants.CMD_SET_QUEUE: {
-                    List<MediaDescriptionCompat> list = extras.getParcelableArrayList(Constants.KEY_QUEUE);
+                    List<MediaMetadataCompat> list = extras.getParcelableArrayList(Constants.KEY_QUEUE);
                     List<MediaSource> playlist = new ArrayList<>();
                     List<MediaSessionCompat.QueueItem> queue = new ArrayList<>();
-                    DefaultMediaSourceFactory factory = new DefaultMediaSourceFactory(MediaService.this);
                     if (list != null) {
                         for (int i = 0; i < list.size(); i++) {
-                            MediaDescriptionCompat description = list.get(i);
+                            MediaMetadataCompat metadata = list.get(i);
+                            MediaDescriptionCompat description = MetadataUtils.turnMetadata2Description(metadata);
                             Uri uri = description.getMediaUri();
                             Log.d(TAG_SESSION_LISTENER, "====~onCustomAction: index = " + i + ", uri = " + uri);
-                            MediaItem mediaItem = MediaItem.fromUri(uri);//turnMediaDescription2MediaItem(description);
+                            MediaItem mediaItem = MediaItem.fromUri(uri);
                             queue.add(new MediaSessionCompat.QueueItem(description, i));
                             playlist.add(factory.createMediaSource(mediaItem));
                         }
+                        // 缓存播放列表
+                        mediaMetadataList.clear();
+                        mediaMetadataList.addAll(list);
                     }
+                    // 设置当前服务中的播放列表
                     session.setQueue(queue);
+                    // 设置播放器播放队列
                     player.setMediaSources(playlist, true);
                     player.prepare();
                     break;
@@ -275,7 +386,7 @@ public class MediaService extends MediaBrowserServiceCompat {
         @Override
         public void onAddQueueItem(MediaDescriptionCompat description) {
             Log.d(TAG_SESSION_LISTENER, "====~onAddQueueItem: description =  " + description);
-            player.addMediaItem(turnMediaDescription2MediaItem(description));
+            player.addMediaItem(MetadataUtils.turnMediaDescription2MediaItem(description));
         }
 
         @Override
@@ -283,7 +394,7 @@ public class MediaService extends MediaBrowserServiceCompat {
             Log.d(TAG_SESSION_LISTENER, "====~onAddQueueItem: description =  " + description);
             List<MediaSessionCompat.QueueItem> list = session.getController().getQueue();
             session.setQueue(list);
-            player.addMediaItem(index, turnMediaDescription2MediaItem(description));
+            player.addMediaItem(index, MetadataUtils.turnMediaDescription2MediaItem(description));
         }
 
         @Override
@@ -326,40 +437,6 @@ public class MediaService extends MediaBrowserServiceCompat {
             Log.d(TAG_SESSION_LISTENER, "====~onSetShuffleMode: shuffleMode =  " + shuffleMode);
             player.setShuffleModeEnabled(shuffleMode == PlaybackStateCompat.SHUFFLE_MODE_NONE);
         }
-    };
 
-    public static MediaItem turnMediaDescription2MediaItem(@Nullable @NonNull MediaDescriptionCompat description) {
-        if (description == null || description.getMediaId() == null) {
-            return null;
-        }
-        MediaMetadata.Builder mediaMetadataBuilder = new MediaMetadata.Builder();
-        mediaMetadataBuilder.setTitle(description.getTitle())
-                .setMediaUri(description.getMediaUri());
-        if (description.getExtras() != null) {
-            if (description.getExtras().containsKey(MediaMetadataCompat.METADATA_KEY_ALBUM))
-                mediaMetadataBuilder.setAlbumTitle(description.getExtras().getString(MediaMetadataCompat.METADATA_KEY_ALBUM));
-            if (description.getExtras().containsKey(MediaMetadataCompat.METADATA_KEY_ARTIST))
-                mediaMetadataBuilder.setArtist(description.getExtras().getString(MediaMetadataCompat.METADATA_KEY_ARTIST));
-            if (description.getExtras().containsKey(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE))
-                mediaMetadataBuilder.setDisplayTitle(description.getExtras().getString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE));
-            mediaMetadataBuilder.setExtras(description.getExtras());
-        }
-        MediaMetadata mediaMetadata = mediaMetadataBuilder.build();
-        MediaItem.Builder builder = new MediaItem.Builder()
-                .setMediaId(description.getMediaId())
-                .setUri(description.getMediaUri())
-                .setMediaId(description.getMediaId())
-                .setMediaMetadata(mediaMetadata);
-        if (description.getExtras() != null && description.getExtras().containsKey(MediaFormat.KEY_MIME)) {
-            builder.setMimeType(description.getExtras().getString(MediaFormat.KEY_MIME));
-        }
-        return builder.build();
     }
-
-    @Override
-    public void onCustomAction(@NonNull String action, Bundle extras, @NonNull Result<Bundle> result) {
-        Log.d(TAG, "====~onCustomAction: action =  " + action + ", extras =  " + extras + ", result =  " + result);
-        super.onCustomAction(action, extras, result);
-    }
-
 }

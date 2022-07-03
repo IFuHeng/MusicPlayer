@@ -77,8 +77,8 @@ public class MediaDataUtils {
         Cursor mAudioCursor = context.getContentResolver().query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 null,// 字段　没有字段　就是查询所有信息　相当于SQL语句中的　“ * ”
-                null, // 查询条件
-                null, // 条件的对应?的参数
+                "mime_type=?", // 查询条件
+                new String[]{"audio/mp3"}, // 条件的对应?的参数
                 MediaStore.Audio.AudioColumns.TITLE);// 排序方式
 
         // 循环输出歌曲的信息
@@ -102,6 +102,7 @@ public class MediaDataUtils {
                 extras.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
                 extras.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
                 extras.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
+                extras.putLong(MediaMetadataCompat.METADATA_KEY_ADVERTISEMENT, size);
                 extras.putLong(MediaMetadataCompat.METADATA_KEY_ART, size);
                 extras.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, mimeType);
 //                setAudioInfo(url, extras);
@@ -113,6 +114,49 @@ public class MediaDataUtils {
                         .setTitle(title)
                         .setExtras(extras);
 
+                result.add(builder.build());
+            }
+        }
+        mAudioCursor.close();
+        return result;
+    }
+
+    public static List<MediaMetadataCompat> getMediaMetadataFromSysDb(Context context) {
+        ArrayList<MediaMetadataCompat> result = new ArrayList<>();
+        Cursor mAudioCursor = context.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                null,// 字段　没有字段　就是查询所有信息　相当于SQL语句中的　“ * ”
+                "mime_type=?", // 查询条件
+                new String[]{"audio/mp3"}, // 条件的对应?的参数
+                MediaStore.Audio.AudioColumns.TITLE);// 排序方式
+
+        // 循环输出歌曲的信息
+        for (int i = 0; i < mAudioCursor.getCount(); i++) {
+            mAudioCursor.moveToNext();
+            // 找到歌曲标题和总时间对应的列索引
+            long id = mAudioCursor.getLong(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)); // 音乐id
+            String title = mAudioCursor.getString((mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)));// 音乐标题
+            String artist = mAudioCursor.getString(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST));// 艺术家
+            long duration = mAudioCursor.getLong(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION));// 时长
+            long size = mAudioCursor.getLong(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)); // 文件大小
+            String url = mAudioCursor.getString(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)); // 文件路径
+            int isMusic = mAudioCursor.getInt(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.IS_MUSIC));// 是否为音乐
+            String displayName = mAudioCursor.getString(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME));
+            String album = mAudioCursor.getString(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM));
+            String mimeType = mAudioCursor.getString(mAudioCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE));
+
+            if (isMusic != 0) {//只有当是音乐的时候才保存
+                MediaMetadataCompat.Builder builder = new MediaMetadataCompat.Builder()
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, String.valueOf(id))
+                        .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
+                        .putLong(MediaMetadataCompat.METADATA_KEY_ADVERTISEMENT, size)
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, displayName)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, artist + "-" + title)
+                        .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_URI, url)
+                        .putString(MediaMetadataCompat.METADATA_KEY_GENRE, mimeType)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
                 result.add(builder.build());
             }
         }
@@ -149,6 +193,7 @@ public class MediaDataUtils {
                 extras.putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, displayName);
                 extras.putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist);
                 extras.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration);
+                extras.putLong(MediaMetadataCompat.METADATA_KEY_ADVERTISEMENT, size);
                 extras.putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album);
 //                setAudioInfo(url, extras);
 

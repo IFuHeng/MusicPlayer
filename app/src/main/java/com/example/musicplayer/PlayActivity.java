@@ -1,42 +1,41 @@
 package com.example.musicplayer;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaDescriptionCompat;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.SeekBar;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.example.musicplayer.database.MediaDataUtils;
 import com.example.musicplayer.databinding.ActivityPlayerBinding;
-import com.example.musicplayer.ui.adpter.MediaDescriptionAdapter;
+import com.example.musicplayer.ui.adpter.QueueItemAdapter;
 
-import java.util.List;
+import java.util.Locale;
 
 public class PlayActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = PlayActivity.class.getSimpleName();
+
+    private ActivityPlayerBinding binding;
     private PlayViewModel model;
-    private MediaDescriptionAdapter mAdapter;
+    private QueueItemAdapter mAdapter;
     private Handler handler;
-    private List<MediaDescriptionCompat> arrayMusic;
 
     private final MediaBrowserCompat.ConnectionCallback connectionCallback = new MediaBrowserCompat.ConnectionCallback() {
         @Override
         public void onConnected() {
             Log.d(TAG, "====~ onConnected");
             model.onConnected(PlayActivity.this, getHandler());
-
-            model.setQueue(arrayMusic);
         }
 
         @Override
@@ -49,7 +48,6 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         initView();
         initModel();
         doConnect();
@@ -57,8 +55,29 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initData() {
-        arrayMusic = MediaDataUtils.getMediaDescriptionFromSysDb(PlayActivity.this);
-        mAdapter.submitList(arrayMusic);
+        if (model.arrMusicLiveData.getValue() != null && !model.arrMusicLiveData.getValue().isEmpty()) {
+            mAdapter.submitList(model.arrMusicLiveData.getValue());
+        }
+        model.arrMusicLiveData.observe(this, queueItems -> mAdapter.submitList(queueItems));
+
+        if (model.nowPlayingLiveData.getValue() != null) {
+            binding.sampleText.setText(model.nowPlayingLiveData.getValue().getDescription().getTitle());
+        }
+        model.nowPlayingLiveData.observe(this, nowPlaying -> binding.sampleText.setText(nowPlaying.getDescription().getTitle()));
+
+        model.durationLiveData.observe(this, duration -> {
+            binding.tvDuration.setText(String.format(Locale.getDefault(), App.FORMAT_TIME, duration / 1000 / 60, (duration / 1000) % 60));
+            binding.seekbar.setMax(Math.toIntExact(duration));
+        });
+        model.positionLiveData.observe(this, position -> {
+            binding.tvPosition.setText(String.format(Locale.getDefault(), App.FORMAT_TIME, position / 1000 / 60, (position / 1000) % 60));
+            binding.seekbar.setProgress(Math.toIntExact(position));
+        });
+        model.positionBufferedLiveData.observe(this, position -> {
+            binding.seekbar.setSecondaryProgress(Math.toIntExact(position));
+        });
+
+        model.isPlayingLiveData.observe(this, isPlaying -> binding.btnPlay.setImageResource(isPlaying ? R.drawable.ic_pause : R.drawable.ic_play));
     }
 
     private void doConnect() {
@@ -70,9 +89,9 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initView() {
-        com.example.musicplayer.databinding.ActivityPlayerBinding binding = ActivityPlayerBinding.inflate(getLayoutInflater());
+        binding = ActivityPlayerBinding.inflate(getLayoutInflater());
         setContentView(binding.root);
-        mAdapter = new MediaDescriptionAdapter(App.getInstance().sIOExecutor, position -> model.skipToQueueItem(position));
+        mAdapter = new QueueItemAdapter(App.getInstance().sIOExecutor, position -> model.skipToQueueItem(position));
         binding.listMedia.setAdapter(mAdapter);
         DividerItemDecoration divider = new DividerItemDecoration(this, LinearLayoutManager.VERTICAL);
         divider.setDrawable(new ColorDrawable(Color.DKGRAY));
@@ -81,6 +100,21 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
         binding.btnPlay.setOnClickListener(this);
         binding.btnPrevious.setOnClickListener(this);
         binding.btnNext.setOnClickListener(this);
+
+        binding.seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                model.seekTo(seekBar.getProgress());
+            }
+        });
     }
 
     private Handler getHandler() {
@@ -97,17 +131,23 @@ public class PlayActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btnNext:
-                Toast.makeText(this, "点击下一首", Toast.LENGTH_SHORT).show();
                 model.skipToNext();
                 break;
             case R.id.btnPrevious:
-                Toast.makeText(this, "点击上一首", Toast.LENGTH_SHORT).show();
                 model.skipToPrevious();
                 break;
             case R.id.btnPlay:
-                Toast.makeText(this, "点击播放", Toast.LENGTH_SHORT).show();
-                model.play();
+                model.playOrPause();
                 break;
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        new AlertDialog.Builder(this).setTitle(R.string.exit).setMessage(R.string.ask_when_exit)
+                .setPositiveButton(R.string.exit_and_close_music, (dialog, which) -> android.os.Process.killProcess(android.os.Process.myPid()))
+                .setNegativeButton(R.string.only_exit, (dialog, which) -> PlayActivity.super.onBackPressed())
+                .setNeutralButton(R.string.cancel, (dialog, which) -> dialog.cancel())
+                .show();
     }
 }

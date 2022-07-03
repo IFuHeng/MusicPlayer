@@ -12,6 +12,8 @@ import java.util.concurrent.Executors;
 
 public class App extends Application {
 
+    public static final String FORMAT_TIME = "%02d:%02d";
+
     public final Executor sIOExecutor = Executors.newSingleThreadExecutor();
 
     public App() {
@@ -42,13 +44,7 @@ public class App extends Application {
             if (!isAccessible) {
                 method.setAccessible(false);
             }
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
             e.printStackTrace();
         }
     }

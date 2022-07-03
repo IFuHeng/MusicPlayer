@@ -14,4 +14,6 @@ public class Constants {
     public static final String CMD_SET_QUEUE = "set media queue";
 
     public static final String KEY_QUEUE = "key of queue";
+
+    public static final String EVENT_ERROR = "error in player";
 }

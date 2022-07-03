@@ -5,7 +5,6 @@ import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.media.MediaBrowserCompat;
-import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -16,6 +15,7 @@ import androidx.activity.ComponentActivity;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.musicplayer.database.MediaDataUtils;
 import com.example.mylibrary.config.Constants;
 import com.example.mylibrary.service.MediaService;
 
@@ -29,7 +29,20 @@ public class PlayViewModel extends ViewModel {
     private MediaBrowserCompat mediaBrowserCompat;
     private MediaControllerCompat controller;
 
-    private final MutableLiveData<List<MediaDescriptionCompat>> arrMusic;
+    /**
+     * 播放列表
+     */
+    public final MutableLiveData<List<MediaSessionCompat.QueueItem>> arrMusicLiveData = new MutableLiveData<>(new ArrayList<>());
+    /**
+     * 正在播放
+     */
+    public final MutableLiveData<MediaMetadataCompat> nowPlayingLiveData = new MutableLiveData<>();
+    public final MutableLiveData<Long> durationLiveData = new MutableLiveData(0L);
+    public final MutableLiveData<Long> positionLiveData = new MutableLiveData(0L);
+    public final MutableLiveData<Long> positionBufferedLiveData = new MutableLiveData(0L);
+    public final MutableLiveData<Boolean> isPlayingLiveData = new MutableLiveData(false);
+
+
     private final MediaControllerCompat.Callback callback = new MediaControllerCompat.Callback() {
         @Override
         public void onSessionReady() {
@@ -45,19 +58,36 @@ public class PlayViewModel extends ViewModel {
 
         @Override
         public void onSessionEvent(String event, Bundle extras) {
-            Log.d(TAG, "====~onSessionEvent: event =  " + event + ", extras = " + extras.keySet());
+            StringBuilder sb = new StringBuilder("{");
+            for (String s : extras.keySet()) {
+                sb.append(s).append(':').append(extras.get(s)).append(',').append(' ');
+            }
+            sb.delete(sb.length() - 2, sb.length());
+            sb.append('}');
+            Log.d(TAG, "====~onSessionEvent: event =  " + event + ", extras = " + sb);
             super.onSessionEvent(event, extras);
         }
 
         @Override
         public void onPlaybackStateChanged(PlaybackStateCompat state) {
             Log.d(TAG, "====~onPlaybackStateChanged: state =  " + state.getState());
+            if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+                positionLiveData.postValue(state.getPosition());
+                isPlayingLiveData.postValue(true);
+            } else if (state.getState() == PlaybackStateCompat.STATE_BUFFERING) {
+                positionBufferedLiveData.postValue(state.getBufferedPosition());
+            } else if (state.getState() == PlaybackStateCompat.STATE_PAUSED) {
+                isPlayingLiveData.postValue(false);
+            }
             super.onPlaybackStateChanged(state);
         }
 
         @Override
         public void onMetadataChanged(MediaMetadataCompat metadata) {
             Log.d(TAG, "====~onMetadataChanged: metadata =  " + metadata.getDescription().getTitle());
+            nowPlayingLiveData.postValue(metadata);
+            isPlayingLiveData.postValue(false);
+            durationLiveData.postValue(metadata.getLong(MediaMetadataCompat.METADATA_KEY_DURATION));
             super.onMetadataChanged(metadata);
         }
 
@@ -65,6 +95,8 @@ public class PlayViewModel extends ViewModel {
         public void onQueueChanged(List<MediaSessionCompat.QueueItem> queue) {
             Log.d(TAG, "====~onQueueChanged: queue =  " + queue);
             super.onQueueChanged(queue);
+
+            arrMusicLiveData.postValue(queue);
         }
 
         @Override
@@ -118,6 +150,12 @@ public class PlayViewModel extends ViewModel {
     public void onConnected(@NotNull Context context, Handler handler) {
         controller = new MediaControllerCompat(context, mediaBrowserCompat.getSessionToken());
         controller.registerCallback(callback, handler);
+        List<MediaSessionCompat.QueueItem> queue = controller.getQueue();
+        arrMusicLiveData.postValue(controller.getQueue());
+        // 如果当前播放列表没有内容，读取并生成播放列表
+        if (queue == null || queue.isEmpty()) {
+            setQueue(MediaDataUtils.getMediaMetadataFromSysDb(context));
+        }
     }
 
     public void onConnectionFailed() {
@@ -126,15 +164,9 @@ public class PlayViewModel extends ViewModel {
     }
 
     public PlayViewModel() {
-        arrMusic = new MutableLiveData<>(new ArrayList<>());
     }
 
-    public MutableLiveData<List<MediaDescriptionCompat>> getArrMusic() {
-        return arrMusic;
-    }
-
-    public void setQueue(List<MediaDescriptionCompat> list) {
-        arrMusic.postValue(list);
+    private void setQueue(List<MediaMetadataCompat> list) {
         if (controller != null) {
             if (list != null && !list.isEmpty()) {
                 Bundle bundle = new Bundle();
@@ -146,15 +178,13 @@ public class PlayViewModel extends ViewModel {
         }
     }
 
-    public void play() {
+    public void playOrPause() {
         if (controller != null) {
-            controller.getTransportControls().play();
-        }
-    }
-
-    public void pause() {
-        if (controller != null) {
-            controller.getTransportControls().pause();
+            if (Boolean.TRUE.equals(isPlayingLiveData.getValue())) {
+                controller.getTransportControls().pause();
+            } else {
+                controller.getTransportControls().play();
+            }
         }
     }
 
@@ -173,6 +203,17 @@ public class PlayViewModel extends ViewModel {
     public void skipToQueueItem(long id) {
         if (controller != null) {
             controller.getTransportControls().skipToQueueItem(id);
+        }
+    }
+
+    /**
+     * 跳转当前歌曲进度到指定进度
+     *
+     * @param position 指定进度
+     */
+    public void seekTo(long position) {
+        if (controller != null && nowPlayingLiveData.getValue() != null) {
+            controller.getTransportControls().seekTo(position);
         }
     }
 }

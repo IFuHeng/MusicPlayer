@@ -1,7 +1,18 @@
 <resources>
     <string name="app_name">MusicPlayer</string>
+    <string name="confirm">Confirm</string>
+    <string name="close">Close</string>
+    <string name="ok">OK</string>
+    <string name="cancel">cancel</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
     <string name="title_activity_test_navigation">TestNavigationActivity</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
+    <string name="ask_when_exit">Exit and close the music?</string>
+    <string name="exit">Exit</string>
+    <string name="only_exit">Exit only</string>
+    <string name="exit_and_close_music">Close and quit</string>
+
 </resources>
